@@ -84,15 +84,18 @@ function exportLottieJSON() {
     alert('没有可导出的动画数据，请先完成转换');
     return;
   }
+
+  // 压缩JSON字符串 - 移除所有空格、换行符和不必要的字符
+  const compressedJSON = JSON.stringify(JSON.parse(currentAnimationJSON));
   
   // 创建 Blob 对象
-  const blob = new Blob([currentAnimationJSON], { type: 'application/json' });
+  const blob = new Blob([compressedJSON], { type: 'application/json' });
   
   // 创建下载链接
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'animation.json';  // 文件名
+  a.download = 'animation_compressed.json';  // 文件名
   
   // 触发下载
   document.body.appendChild(a);
@@ -101,6 +104,13 @@ function exportLottieJSON() {
   // 清理
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+
+    // 计算压缩率
+  const originalSize = new Blob([currentAnimationJSON]).size;
+  const compressedSize = blob.size;
+  const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(2);
+  
+  setStatus(`动画数据已导出 (压缩率: ${compressionRatio}%)`);
   
   setStatus('动画数据已导出');
 }
@@ -228,6 +238,10 @@ runBtn.addEventListener('click', async () => {
   
   // 存储到全局变量，供导出按钮使用
   currentAnimationJSON = animationJSON;
+
+  // 计算原始大小并显示
+  const originalSizeKB = (new Blob([animationJSON]).size / 1024).toFixed(2);
+  setStatus(`完成 ${totalFrames} 帧 (${W}x${H}) - 文件大小: ${originalSizeKB}KB`);
   
   // 启用导出按钮
   exportBtn.disabled = false;
