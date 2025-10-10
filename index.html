@@ -45,6 +45,31 @@
       width: 80%;
       max-width: 1200px;
     }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    button:hover:not(:disabled) {
+      background-color: #45a049;
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -64,7 +89,10 @@
 
 
   <p>3. 转换为 Lottie 动画</p>
-  <button id="run">开始转换</button>
+  <div class="button-group">
+    <button id="run">开始转换</button>
+    <button id="exportBtn" disabled>导出 JSON</button>
+  </div>
   <progress id="progress" value="0" max="100" style="width:300px;"></progress>
   <span id="progressText"></span>
   <div id="status"></div>

@@ -15,6 +15,9 @@ const ffmpegInstance = ffmpeg({
   corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'  // FFmpeg 核心库路径
 });
 
+// 全局变量，用于存储生成的动画数据
+let currentAnimationJSON = null;
+
 /**
  * 加载 FFmpeg 核心库和相关资源
  * @async
@@ -39,6 +42,7 @@ const progressEl = document.getElementById('progress');      // 进度条
 const progressText = document.getElementById('progressText');// 进度文本
 const statusEl = document.getElementById('status');          // 状态文本
 const lottieContainer = document.getElementById('lottieContainer'); // 动画容器
+const exportBtn = document.getElementById('exportBtn');      // 导出按钮
 
 /**
  * 设置状态文本
@@ -70,6 +74,35 @@ async function arrayBufferToDataURL(buffer, mime='image/png') {
     reader.onload = () => res(reader.result);
     reader.readAsDataURL(blob);
   });
+}
+
+/**
+ * 导出 Lottie 动画 JSON 数据为文件
+ */
+function exportLottieJSON() {
+  if (!currentAnimationJSON) {
+    alert('没有可导出的动画数据，请先完成转换');
+    return;
+  }
+  
+  // 创建 Blob 对象
+  const blob = new Blob([currentAnimationJSON], { type: 'application/json' });
+  
+  // 创建下载链接
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'animation.json';  // 文件名
+  
+  // 触发下载
+  document.body.appendChild(a);
+  a.click();
+  
+  // 清理
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  setStatus('动画数据已导出');
 }
 
 /**
@@ -192,7 +225,16 @@ runBtn.addEventListener('click', async () => {
 
   // 动画数据转换为 JSON 字符串
   const animationJSON = JSON.stringify(animation);
+  
+  // 存储到全局变量，供导出按钮使用
+  currentAnimationJSON = animationJSON;
+  
+  // 启用导出按钮
+  exportBtn.disabled = false;
 
   // 打印 JSON 字符串
   console.log(animationJSON);
 });
+
+// 导出按钮事件监听
+exportBtn.addEventListener('click', exportLottieJSON);
