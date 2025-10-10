@@ -1,14 +1,25 @@
 
-const { createFFmpeg, fetchFile } = FFmpeg; 
+// 移除错误的解构赋值，直接使用全局FFmpeg对象
+// const { createFFmpeg, fetchFile } = FFmpeg;
 
-const ffmpeg = createFFmpeg({ log: true });
+// 正确初始化FFmpeg并提供完整配置
+const ffmpeg = window.createFFmpeg || FFmpeg.createFFmpeg;
+const fetchFile = window.fetchFile || FFmpeg.fetchFile;
 
+console.log('FFmpeg 版本:', ffmpeg);
+
+// 使用正确的方式创建实例并提供corePath配置
+const ffmpegInstance = ffmpeg({
+  log: true,
+  corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+});
+
+// 修改loadFFmpegCore函数以使用正确的实例
 async function loadFFmpegCore() {
-  const base = 'https://app.unpkg.com/@ffmpeg/core@0.12.6/files/dist/esm';
-  await ffmpeg.load({
+  const base = 'https://unpkg.com/@ffmpeg/core@0.11.0/dist';
+  await ffmpegInstance.load({
     coreURL: `${base}/ffmpeg-core.js`,
-    wasmURL: `${base}/ffmpeg-core.wasm`,
-//     workerURL: `${base}/ffmpeg-core.worker.js`
+    wasmURL: `${base}/ffmpeg-core.wasm`
   });
 }
 
@@ -22,11 +33,6 @@ const progressText = document.getElementById('progressText');
 const statusEl = document.getElementById('status');
 const lottieContainer = document.getElementById('lottieContainer');
 
-//const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist';
-
-// const ffmpeg = createFFmpeg({ log: true });
-
-// const ffmpeg = createFFmpeg({ log: true, corePath: 'ffmpeg-core.js' });
 
 function setStatus(txt) { statusEl.textContent = txt; }
 function setProgress(v, text = '') {
@@ -52,13 +58,12 @@ runBtn.addEventListener('click', async () => {
   const maxFrames = Number(maxFramesEl.value) || 150;
 
  setStatus('加载 ffmpeg 核心...');
-  if (!ffmpeg.isLoaded()) await loadFFmpegCore();
+ console.log('FFmpeg 实例:', ffmpegInstance);
+  if (!ffmpegInstance.isLoaded()) await loadFFmpegCore();
 
-//   setStatus('加载 ffmpeg.wasm...');
-//   if (!ffmpeg.isLoaded()) await ffmpeg.load();
 
   setStatus('写入视频文件...');
-  ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(file));
+  ffmpegInstance.FS('writeFile', 'input.mp4', await fetchFile(file));
 
   const scaleFilter = scale < 1 ? `,scale=iw*${scale}:ih*${scale}` : '';
   const vf = `fps=${targetFps}${scaleFilter}`;
