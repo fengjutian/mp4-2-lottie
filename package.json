@@ -1,18 +1,45 @@
 {
   "name": "mp4-2-lottie",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "MP4 to Lottie Converter",
+  "main": "main.js",
   "scripts": {
     "dev": "node serve.js",
     "start": "npx http-server . -p 5173",
+    "electron": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --dir",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "electron",
+    "lottie",
+    "mp4",
+    "converter",
+    "animation"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "child_process": "^1.0.2",
     "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "electron": "^38.2.2",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.mp4-2-lottie.app",
+    "productName": "MP4 to Lottie Converter",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

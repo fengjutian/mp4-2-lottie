@@ -316,3 +316,57 @@ runBtn.addEventListener('click', async () => {
 
 // 导出按钮事件监听
 exportBtn.addEventListener('click', exportLottieJSON);
+
+// 检查是否在Electron环境中
+const isElectron = typeof window !== 'undefined' && window.process && window.process.type === 'renderer';
+let ipcRenderer;
+
+if (isElectron) {
+  ipcRenderer = window.require('electron').ipcRenderer;
+  // 设置Electron环境下的文件保存回调
+  ipcRenderer.on('save-file-success', () => {
+    setStatus('文件保存成功！');
+  });
+  ipcRenderer.on('save-file-error', (event, error) => {
+    setStatus(`保存文件失败: ${error}`);
+  });
+}
+
+// 修改导出JSON函数以支持Electron
+function exportJSON() {
+  if (!animationJSON) {
+    setStatus('请先完成转换');
+    return;
+  }
+
+  if (isElectron) {
+    // 使用Electron的对话框
+    const { dialog } = window.require('electron').remote;
+    const options = {
+      title: '保存Lottie JSON文件',
+      defaultPath: 'animation.json',
+      filters: [{ name: 'JSON Files', extensions: ['json'] }]
+    };
+    
+    dialog.showSaveDialog(options).then(result => {
+      if (!result.canceled && result.filePath) {
+        ipcRenderer.send('save-file', { 
+          filePath: result.filePath, 
+          content: animationJSON 
+        });
+      }
+    });
+  } else {
+    // 保持原有的Web导出逻辑
+    const blob = new Blob([animationJSON], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'animation.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setStatus('JSON文件已导出');
+  }
+}
