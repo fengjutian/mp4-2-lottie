@@ -19,7 +19,8 @@ async function loadFFmpegCore() {
   const base = 'https://unpkg.com/@ffmpeg/core@0.11.0/dist';
   await ffmpegInstance.load({
     coreURL: `${base}/ffmpeg-core.js`,
-    wasmURL: `${base}/ffmpeg-core.wasm`
+    wasmURL: `${base}/ffmpeg-core.wasm`,
+    workerURL: `${base}/ffmpeg-core.worker.js`,
   });
 }
 
