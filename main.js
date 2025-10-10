@@ -38,11 +38,18 @@ const runBtn = document.getElementById('run');               // 开始转换按�
 const fpsEl = document.getElementById('fps');                // 帧率输入
 const scaleEl = document.getElementById('scale');            // 缩放比例输入
 const maxFramesEl = document.getElementById('maxFrames');    // 最大帧数输入
+const imageQualityEl = document.getElementById('imageQuality'); // 图片质量输入
+const qualityValueEl = document.getElementById('qualityValue'); // 质量值显示
 const progressEl = document.getElementById('progress');      // 进度条
 const progressText = document.getElementById('progressText');// 进度文本
 const statusEl = document.getElementById('status');          // 状态文本
 const lottieContainer = document.getElementById('lottieContainer'); // 动画容器
 const exportBtn = document.getElementById('exportBtn');      // 导出按钮
+
+// 添加质量值显示更新事件
+imageQualityEl.addEventListener('input', function() {
+  qualityValueEl.textContent = this.value;
+});
 
 /**
  * 设置状态文本
@@ -67,14 +74,68 @@ function setProgress(v, text = '') {
  * @param {string} mime - MIME 类型，默认为 'image/png'
  * @returns {Promise<string>} - 转换后的 Data URL
  */
-async function arrayBufferToDataURL(buffer, mime='image/png') {
-  const blob = new Blob([buffer], { type: mime });
-  return await new Promise((res) => {
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result);
-    reader.readAsDataURL(blob);
+// async function arrayBufferToDataURL(buffer, mime='image/png') {
+//   const blob = new Blob([buffer], { type: mime });
+//   return await new Promise((res) => {
+//     const reader = new FileReader();
+//     reader.onload = () => res(reader.result);
+//     reader.readAsDataURL(blob);
+//   });
+// }
+
+async function arrayBufferToDataURL(buffer, mime='image/jpeg', quality=0.8) {
+  // 如果不需要压缩或不是支持压缩的格式，直接转换
+  if (quality >= 1 || !['image/jpeg', 'image/webp'].includes(mime)) {
+    const blob = new Blob([buffer], { type: mime });
+    return await new Promise((res) => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  }
+
+    // 使用 canvas 进行图片质量压缩
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    img.onload = () => {
+      // 设置 canvas 尺寸
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      // 在 canvas 上绘制图片
+      ctx.drawImage(img, 0, 0);
+      
+      // 使用指定质量导出 Data URL
+      try {
+        const dataURL = canvas.toDataURL(mime, quality);
+        resolve(dataURL);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    
+    img.onerror = reject;
+
+        // 将 ArrayBuffer 转换为临时 URL 加载图片
+    const blob = new Blob([buffer], { type: 'image/png' });
+    const url = URL.createObjectURL(blob);
+    img.src = url;
+    // 清理临时 URL
+    img.onload = function() {
+      URL.revokeObjectURL(url);
+      // 继续原来的 onload 逻辑
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      const dataURL = canvas.toDataURL(mime, quality);
+      resolve(dataURL);
+    };
   });
 }
+
 
 /**
  * 导出 Lottie 动画 JSON 数据为文件
@@ -95,7 +156,7 @@ function exportLottieJSON() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'animation_compressed.json';  // 文件名
+  a.download = `animation_compressed_${new Date().getTime()}.json`;  // 文件名
   
   // 触发下载
   document.body.appendChild(a);
@@ -124,9 +185,11 @@ runBtn.addEventListener('click', async () => {
   if (!file) return alert('请选择一个 MP4 文件');
 
   // 获取用户设置的参数
-  const targetFps = Number(fpsEl.value) || 15;      // 目标帧率，默认为15
-  const scale = Number(scaleEl.value) || 1;          // 缩放比例，默认为1
-  const maxFrames = Number(maxFramesEl.value) || 150; // 最大帧数，默认为150
+  const targetFps = Number(fpsEl.value) || 15;
+  const scale = Number(scaleEl.value) || 1;
+  const maxFrames = Number(maxFramesEl.value) || 150;
+  // 添加图片质量参数
+  const imageQuality = Number(imageQualityEl.value) || 0.8; // 默认为0.8
 
   // 加载 FFmpeg 核心库
   setStatus('加载 ffmpeg 核心...');
@@ -175,7 +238,8 @@ runBtn.addEventListener('click', async () => {
   for (let i = 0; i < totalFrames; i++) {
     setProgress((i / totalFrames) * 100, `帧 ${i + 1}/${totalFrames}`);
     const buf = ffmpegInstance.FS('readFile', files[i]);
-    const dataURL = await arrayBufferToDataURL(buf.buffer, 'image/png');
+    // 使用JPEG格式和指定质量进行压缩
+    const dataURL = await arrayBufferToDataURL(buf.buffer, 'image/jpeg', imageQuality);
     assets.push({
       id: `img_${i}`,        // 资源ID
       w: W,                  // 宽度
@@ -241,7 +305,7 @@ runBtn.addEventListener('click', async () => {
 
   // 计算原始大小并显示
   const originalSizeKB = (new Blob([animationJSON]).size / 1024).toFixed(2);
-  setStatus(`完成 ${totalFrames} 帧 (${W}x${H}) - 文件大小: ${originalSizeKB}KB`);
+  setStatus(`完成 ${totalFrames} 帧 (${W}x${H}) - 文件大小: ${originalSizeKB}KB ${originalSizeKB/1024}M (压缩质量: ${imageQuality})`);
   
   // 启用导出按钮
   exportBtn.disabled = false;
