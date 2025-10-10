@@ -70,7 +70,7 @@ runBtn.addEventListener('click', async () => {
   const vf = `fps=${targetFps}${scaleFilter}`;
 
   setStatus('开始拆帧...');
-  await ffmpeg.run(
+  await ffmpegInstance.run(
     '-i', 'input.mp4',
     '-vf', vf,
     '-vsync', '0',
@@ -78,7 +78,7 @@ runBtn.addEventListener('click', async () => {
   );
 
   setStatus('读取帧文件...');
-  let files = ffmpeg.FS('readdir', '/').filter(f => f.endsWith('.png')).sort();
+  let files = ffmpegInstance.FS('readdir', '/').filter(f => f.endsWith('.png')).sort();
 
   if (files.length > maxFrames) {
     setStatus(`超过最大帧数限制 (${files.length} > ${maxFrames})，仅保留前 ${maxFrames} 帧`);
@@ -88,7 +88,7 @@ runBtn.addEventListener('click', async () => {
   const totalFrames = files.length;
   setProgress(0, `读取 ${totalFrames} 帧`);
 
-  const firstBuf = ffmpeg.FS('readFile', files[0]);
+  const firstBuf = ffmpegInstance.FS('readFile', files[0]);
   const firstDataURL = await arrayBufferToDataURL(firstBuf.buffer, 'image/png');
   const img = new Image();
   await new Promise(res => { img.onload = res; img.src = firstDataURL; });
@@ -97,7 +97,7 @@ runBtn.addEventListener('click', async () => {
   const assets = [];
   for (let i = 0; i < totalFrames; i++) {
     setProgress((i / totalFrames) * 100, `帧 ${i + 1}/${totalFrames}`);
-    const buf = ffmpeg.FS('readFile', files[i]);
+    const buf = ffmpegInstance.FS('readFile', files[i]);
     const dataURL = await arrayBufferToDataURL(buf.buffer, 'image/png');
     assets.push({
       id: `img_${i}`,
