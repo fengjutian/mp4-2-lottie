@@ -189,4 +189,10 @@ runBtn.addEventListener('click', async () => {
     autoplay: true,              // 自动播放
     animationData: animation     // 动画数据
   });
+
+  // 动画数据转换为 JSON 字符串
+  const animationJSON = JSON.stringify(animation);
+
+  // 打印 JSON 字符串
+  console.log(animationJSON);
 });
