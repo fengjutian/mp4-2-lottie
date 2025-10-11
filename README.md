@@ -18,7 +18,7 @@ npm install
 ```
 ### 启动开发服务器
 ```
-npm start
+npm dev
 ```
 然后在浏览器中访问 http://localhost:3000 开始使用工具。
 
