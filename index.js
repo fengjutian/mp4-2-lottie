@@ -119,7 +119,7 @@ async function arrayBufferToDataURL(buffer, mime='image/jpeg', quality=0.8) {
     
     img.onerror = reject;
 
-        // 将 ArrayBuffer 转换为临时 URL 加载图片
+    // 将 ArrayBuffer 转换为临时 URL 加载图片
     const blob = new Blob([buffer], { type: 'image/png' });
     const url = URL.createObjectURL(blob);
     img.src = url;
